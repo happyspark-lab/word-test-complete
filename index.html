@@ -18,6 +18,8 @@
         .game-card {
             background: rgba(30, 10, 10, 0.95); border: 5px solid var(--secondary); border-radius: 25px;
             padding: 30px; box-shadow: 0 0 50px rgba(255, 51, 0, 0.5); width: 95%; max-width: 750px; text-align: center;
+            /* 防止padding撑大容器 */
+            box-sizing: border-box;
         }
         .header { display: flex; justify-content: space-between; font-size: 1.2rem; color: var(--secondary); margin-bottom: 10px; }
         .progress-track { width: 100%; height: 14px; background: #441111; border-radius: 7px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--primary); }
@@ -50,6 +52,47 @@
         .action-btn:active { transform: translateY(4px); box-shadow: none; }
 
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        /* ========================================= */
+        /* 👇 手机端适配代码 (屏幕小于600px时生效) 👇 */
+        /* ========================================= */
+        @media screen and (max-width: 600px) {
+            /* 1. 容器变得更紧凑 */
+            .game-card { padding: 15px 10px; width: 95%; border-width: 3px; }
+            
+            /* 2. 强制缩小大标题和说明文字 (使用 !important 覆盖内联样式) */
+            h1[style] { font-size: 2.4rem !important; margin-bottom: 10px !important; }
+            #start-screen p[style] { font-size: 1.2rem !important; margin-bottom: 20px !important; }
+            
+            /* 3. 首页说明框字体缩小 */
+            #start-screen div[style*="font-size: 1.4rem"] {
+                font-size: 1.1rem !important;
+                padding: 15px !important;
+                line-height: 1.6 !important;
+            }
+
+            /* 4. 核心题目区域缩小 */
+            .q-phrase { font-size: 2.8rem; letter-spacing: 2px; }
+            .q-instruction { font-size: 1.2rem; }
+            .q-phrase-container { margin: 15px 0; gap: 5px; }
+
+            /* 5. 选项按钮调整 */
+            .options-grid { gap: 10px; }
+            .option-btn { padding: 15px 5px; font-size: 1.6rem; border-radius: 12px; }
+
+            /* 6. 底部操作按钮全宽，方便点击 */
+            .action-btn { 
+                width: 100%; 
+                padding: 15px 0 !important; 
+                font-size: 1.5rem !important; 
+                box-sizing: border-box; 
+            }
+            
+            /* 7. 反馈区域 */
+            .feedback-box { padding: 15px; margin-top: 15px; }
+            .fb-title { font-size: 1.5rem; }
+            .fb-text { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
@@ -80,10 +123,12 @@
         <div id="result-screen" style="display: none;">
             <h1 style="font-size: 3.5rem; color: var(--secondary);">试炼结束！</h1>
             <div id="final-score" style="font-size: 5rem; margin: 10px 0; color: var(--secondary);">0</div>
+            
             <div id="wrong-record-box">
                 <p style="text-align:left; color:var(--secondary); font-size: 1.4rem;">📜 英雄卷轴（错题复盘）：</p>
                 <div class="wrong-list" id="wrong-list"></div>
             </div>
+            
             <button class="action-btn" onclick="location.reload()">再次修炼</button>
         </div>
     </div>
@@ -91,6 +136,10 @@
 <script>
     const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(freq, type, duration) {
+        // 增加安全检查，防止AudioCtx未就绪报错
+        if(AudioCtx.state === 'suspended') {
+             try { AudioCtx.resume(); } catch(e){}
+        }
         const osc = AudioCtx.createOscillator();
         const gain = AudioCtx.createGain();
         osc.type = type; osc.frequency.value = freq;
@@ -182,10 +231,13 @@
     let currentPool = []; let idx = 0; let score = 0; let wrongRecords = [];
 
     function startGame() {
-        if (AudioCtx.state === 'suspended') AudioCtx.resume();
+        if (AudioCtx.state === 'suspended') {
+            try{ AudioCtx.resume(); } catch(e){}
+        }
         // 随机抽取20题，因为库够大，所以不会重复
         currentPool = [...DB].sort(() => Math.random() - 0.5).slice(0, 20);
         idx = 0; score = 0; wrongRecords = [];
+        
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
         showQuestion();
