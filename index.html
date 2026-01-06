@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五年级字词：哪吒封神榜 V12</title>
+    <style>
+        :root {
+            --primary: #ff3300; --secondary: #ffcc00; --dark: #220a0a;
+            --light: #fff5e6; --correct: #00e676; --wrong: #ff1744;
+        }
+        body {
+            margin: 0; padding: 0; font-family: 'KaiTi', '楷体', serif;
+            background-color: var(--dark);
+            background-image: radial-gradient(circle at 50% 50%, rgba(255, 51, 0, 0.2) 0%, transparent 80%);
+            color: var(--light); min-height: 100vh; display: flex; justify-content: center; align-items: center;
+        }
+        .game-card {
+            background: rgba(30, 10, 10, 0.95); border: 5px solid var(--secondary); border-radius: 25px;
+            padding: 30px; box-shadow: 0 0 50px rgba(255, 51, 0, 0.5); width: 95%; max-width: 750px; text-align: center;
+        }
+        .header { display: flex; justify-content: space-between; font-size: 1.2rem; color: var(--secondary); margin-bottom: 10px; }
+        .progress-track { width: 100%; height: 14px; background: #441111; border-radius: 7px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--primary); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #ffcc00, #ff3300); width: 0%; transition: width 0.3s; }
+        .q-badge { background: var(--primary); display: inline-block; padding: 6px 16px; border-radius: 12px; font-size: 1.1rem; margin-bottom: 15px; color: white; font-weight: bold;}
+        
+        .q-phrase-container { display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 25px 0; }
+        .q-instruction { font-size: 1.6rem; color: #aaa; } 
+        /* 核心优化：高亮字样式 */
+        .q-phrase { font-size: 4rem; color: var(--light); text-shadow: 0 0 20px var(--primary); white-space: nowrap; letter-spacing: 5px; }
+        .highlight-y { color: #ffcc00; font-weight: bold; font-size: 1.1em; border-bottom: 4px solid #ffcc00; padding-bottom: 5px; text-shadow: 0 0 10px #ff9900; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .option-btn {
+            background: rgba(255,255,255,0.05); border: 2px solid #662222; color: var(--light);
+            padding: 20px; font-size: 2.2rem; border-radius: 18px; cursor: pointer; transition: 0.2s;
+        }
+        .option-btn:hover { border-color: var(--secondary); background: rgba(255, 204, 0, 0.1); }
+        .option-btn.correct { background: var(--correct) !important; color: #000; font-weight: bold; }
+        .option-btn.wrong { background: var(--wrong) !important; }
+        
+        .feedback-box { display: none; margin-top: 25px; padding: 20px; border: 2px dashed var(--secondary); background: rgba(0,0,0,0.6); text-align: left; }
+        .fb-title { font-size: 2rem; font-weight: bold; display: block; margin-bottom: 10px; }
+        .fb-text { font-size: 1.6rem; line-height: 1.5; color: #fff; }
+        
+        .wrong-list { text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-size: 1.2rem; }
+        .wrong-item { color: #ff6b6b; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 4px; }
+        
+        .action-btn { background: var(--secondary); color: #331111; border: none; padding: 18px 50px; font-size: 1.8rem; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 25px; box-shadow: 0 5px 0 #b8860b; }
+        .action-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    </style>
+</head>
+<body>
+    <div id="game-container" class="game-card">
+        <div id="start-screen">
+            <h1 style="font-size: 4rem; color: var(--secondary); margin-bottom: 5px; text-shadow: 2px 2px 5px #000;">🔥 哪吒封神榜 🔥</h1>
+            <p style="font-size: 1.6rem; color: #fff; margin-bottom: 30px;">五年级字词 · 全量题库终极版</p>
+            
+            <div style="margin: 20px auto; max-width: 550px; font-size: 1.4rem; text-align: left; background: rgba(255,255,255,0.05); padding: 25px; border-radius: 18px; border: 1px solid rgba(255,204,0,0.3);">
+                <p>🎯 <b>英雄任务</b>：从百道题库中随机抽取 20 关进行试炼。</p>
+                <p>⚠️ <b>注意细节</b>：请重点关注<span style="color:#ffcc00; font-weight:bold;">金色高亮</span>的字词。</p>
+                <p>🏆 <b>通关奖励</b>：生成专属“错题卷轴”，助你法力大增。</p>
+            </div>
+            
+            <button class="action-btn" style="font-size: 2rem; padding: 20px 60px; animation: pulse 2s infinite;" onclick="startGame()">踏上封神之路</button>
+        </div>
+
+        <div id="game-screen" style="display: none;">
+            <div class="header"><span id="score-display">功德点: 0</span><span id="count-display">进度: 1/20</span></div>
+            <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
+            <div id="q-type" class="q-badge"></div>
+            <div class="q-phrase-container" id="q-main-display"></div>
+            <div class="options-grid" id="options-grid"></div>
+            <div class="feedback-box" id="feedback-box"><span id="fb-title" class="fb-title"></span><p id="fb-text" class="fb-text"></p></div>
+            <button id="next-btn" class="action-btn" style="display:none" onclick="nextQuestion()">斩下个妖孽 ➔</button>
+        </div>
+
+        <div id="result-screen" style="display: none;">
+            <h1 style="font-size: 3.5rem; color: var(--secondary);">试炼结束！</h1>
+            <div id="final-score" style="font-size: 5rem; margin: 10px 0; color: var(--secondary);">0</div>
+            <div id="wrong-record-box">
+                <p style="text-align:left; color:var(--secondary); font-size: 1.4rem;">📜 英雄卷轴（错题复盘）：</p>
+                <div class="wrong-list" id="wrong-list"></div>
+            </div>
+            <button class="action-btn" onclick="location.reload()">再次修炼</button>
+        </div>
+    </div>
+
+<script>
+    const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration) {
+        const osc = AudioCtx.createOscillator();
+        const gain = AudioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, AudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, AudioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(AudioCtx.destination);
+        osc.start(); osc.stop(AudioCtx.currentTime + duration);
+    }
+
+    // --- 全量题库 (涵盖100+核心考点) ---
+    const DB = [
+        // 易读错字 (Highlight the specific character)
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"白<span class='highlight-y'>鹭</span>", opts:["lù", "lòu"], ans:"lù", why:"鹭(lù)鸟，不读lòu。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>黛</span>青", opts:["dài", "hēi"], ans:"dài", why:"黛(dài)色，不读hēi。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"镶<span class='highlight-y'>嵌</span>", opts:["qiàn", "kàn"], ans:"qiàn", why:"嵌(qiàn)入，不读kàn。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>翡</span>翠", opts:["fěi", "fēi"], ans:"fěi", why:"翡(fěi)读三声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>湛</span>蓝", opts:["zhàn", "chén"], ans:"zhàn", why:"湛(zhàn)蓝，不读chén。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>渲</span>染", opts:["xuàn", "xuān"], ans:"xuàn", why:"渲(xuàn)染是四声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"勾<span class='highlight-y'>勒</span>", opts:["lè", "lēi"], ans:"lè", why:"勾勒(lè)，不读lēi。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>臀</span>部", opts:["tún", "diàn"], ans:"tún", why:"臀(tún)部，不读diàn。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"蜿<span class='highlight-y'>蜒</span>", opts:["yán", "wǎn"], ans:"yán", why:"蜒(yán)不读wǎn。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"匀<span class='highlight-y'>称</span>", opts:["chèn", "chēng"], ans:"chèn", why:"匀称(chèn)读四声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"咀<span class='highlight-y'>嚼</span>", opts:["jué", "jiáo"], ans:"jué", why:"书面语读jué。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>烙</span>印", opts:["lào", "luò"], ans:"lào", why:"烙(lào)印，不读luò。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"粗<span class='highlight-y'>糙</span>", opts:["cāo", "zào"], ans:"cāo", why:"糙(cāo)是一声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>攥</span>着", opts:["zuàn", "zhuàn"], ans:"zuàn", why:"攥(zuàn)不读zhuàn。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>窈</span>窕", opts:["yǎo", "wā"], ans:"yǎo", why:"窈(yǎo)不读wā。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>揩</span>油", opts:["kāi", "jiē"], ans:"kāi", why:"揩(kāi)意为擦。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"澎<span class='highlight-y'>湃</span>", opts:["pài", "bài"], ans:"pài", why:"湃(pài)不读bài。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>踱</span>步", opts:["duó", "dù"], ans:"duó", why:"踱(duó)不读dù。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>憔</span>悴", opts:["qiáo", "jiāo"], ans:"qiáo", why:"憔(qiáo)不读jiāo。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"揉<span class='highlight-y'>搓</span>", opts:["cuō", "cuò"], ans:"cuō", why:"搓(cuō)是一声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"残<span class='highlight-y'>羹</span>", opts:["gēng", "jīng"], ans:"gēng", why:"羹(gēng)不读jīng。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>霎</span>时", opts:["shà", "shā"], ans:"shà", why:"霎(shà)是四声。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>啜</span>泣", opts:["chuò", "chuài"], ans:"chuò", why:"啜(chuò)不读chuài。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"烟<span class='highlight-y'>囱</span>", opts:["cōng", "tǒng"], ans:"cōng", why:"囱(cōng)不读tǒng。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"佝<span class='highlight-y'>偻</span>", opts:["lóu", "lǚ"], ans:"lóu", why:"偻(lóu)不读lǚ。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>插</span>嘴", opts:["chā", "cā"], ans:"chā", why:"插(chā)是翘舌音。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>拽</span>住", opts:["zhuài", "yè"], ans:"zhuài", why:"拽(zhuài)不读yè。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>掺</span>和", opts:["chān", "càn"], ans:"chān", why:"掺(chān)不读càn。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"恐<span class='highlight-y'>吓</span>", opts:["hè", "xià"], ans:"hè", why:"吓(hè)不读xià。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>踮</span>起", opts:["diǎn", "tiān"], ans:"diǎn", why:"踮(diǎn)不读tiān。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"执<span class='highlight-y'>拗</span>", opts:["niù", "ào"], ans:"niù", why:"拗(niù)不读ào。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"倔<span class='highlight-y'>强</span>", opts:["jiàng", "qiáng"], ans:"jiàng", why:"强(jiàng)不读qiáng。" },
+        { t:"正音试炼", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>龇</span>牙", opts:["zī", "cī"], ans:"zī", why:"龇(zī)不读cī。" },
+
+        // 多音字 (Highlight context char)
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"一哄而<span class='highlight-y'>散</span>", opts:["sàn", "sǎn"], ans:"sàn", why:"解散读sàn；松散读sǎn。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>鲜</span>为人知", opts:["xiǎn", "xiān"], ans:"xiǎn", why:"新鲜读xiān；少见读xiǎn。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"物品<span class='highlight-y'>便</span>宜", opts:["pián", "biàn"], ans:"pián", why:"方便读biàn；便宜读pián。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>挨</span>近窗户", opts:["āi", "ái"], ans:"āi", why:"靠近读āi；挨打读ái。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"勇夺<span class='highlight-y'>冠</span>军", opts:["guàn", "guān"], ans:"guàn", why:"桂冠读guān；第一名读guàn。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"淹<span class='highlight-y'>没</span>农田", opts:["mò", "méi"], ans:"mò", why:"没有读méi；沉没读mò。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"剥<span class='highlight-y'>削</span>百姓", opts:["xuē", "xiāo"], ans:"xuē", why:"剥削读xuē；削皮读xiāo。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"蛮<span class='highlight-y'>横</span>无理", opts:["hèng", "héng"], ans:"hèng", why:"横竖读héng；强横读hèng。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>露</span>馅儿了", opts:["lòu", "lù"], ans:"lòu", why:"露珠读lù；显露形迹读lòu。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"土地<span class='highlight-y'>龟</span>裂", opts:["jūn", "guī"], ans:"jūn", why:"乌龟读guī；裂开读jūn。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"脸蛋红<span class='highlight-y'>晕</span>", opts:["yùn", "yūn"], ans:"yùn", why:"头晕读yūn；色彩读yùn。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"博闻强<span class='highlight-y'>识</span>", opts:["zhì", "shí"], ans:"zhì", why:"知识读shí；记忆读zhì。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>悄</span>然无声", opts:["qiǎo", "qiāo"], ans:"qiǎo", why:"书面语读qiǎo；悄悄话读qiāo。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"参<span class='highlight-y'>差</span>不齐", opts:["cī", "chā"], ans:"cī", why:"差别读chā；长短不一读cī。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>系</span>鞋带", opts:["jì", "xì"], ans:"jì", why:"关系读xì；打结读jì。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"<span class='highlight-y'>挣</span>扎", opts:["zhēng", "zhèng"], ans:"zhēng", why:"挣扎读zhēng；挣钱读zhèng。" },
+        { t:"多音迷阵", inst:"选出高亮字的读音", phrase:"停<span class='highlight-y'>泊</span>", opts:["bó", "pō"], ans:"bó", why:"湖泊读pō；停船读bó。" },
+
+        // 书写与形近字
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"yǎn jiǎn", opts:["眼睑", "眼脸"], ans:"眼睑", why:"‘睑’右边是‘佥’。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"zhàng péng", opts:["帐篷", "账篷"], ans:"帐篷", why:"帐篷用巾字旁，账本用贝字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"kuí wú", opts:["魁梧", "傀梧"], ans:"魁梧", why:"‘魁’内部是‘斗’，不是‘鬼’。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"shàng è", opts:["上腭", "上颚"], ans:"上腭", why:"上腭用月字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"fán yǎn", opts:["繁衍", "繁行"], ans:"繁衍", why:"衍字中间是‘行’。" },
+        { t:"火眼金睛", inst:"成语补全", phrase:"再接再__", opts:["厉", "励"], ans:"厉", why:"厉指磨刀石，厉兵秣马。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"gān zào", opts:["干燥", "干躁"], ans:"干燥", why:"燥热用火，躁动用足。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"gào qìng", opts:["告罄", "告馨"], ans:"告罄", why:"罄是缶部，意为空了。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"pái fāng", opts:["牌坊", "牌仿"], ans:"牌坊", why:"坊是土字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"biàn zi", opts:["辫子", "辩子"], ans:"辫子", why:"辫子中间是‘系’。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"jiān yù", opts:["监狱", "监欲"], ans:"监狱", why:"狱中间是‘言’。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"quán suō", opts:["蜷缩", "倦缩"], ans:"蜷缩", why:"蜷是虫字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"yǒu hēi", opts:["黝黑", "幼黑"], ans:"黝黑", why:"黝是黑字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"huáng dēng", opts:["黄澄澄", "黄登登"], ans:"黄澄澄", why:"注意是三点水的‘澄’。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"__别", opts:["辨", "辩"], ans:"辨", why:"分辨用刀(辨)。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"争__", opts:["辩", "辨"], ans:"辩", why:"辩论用言(辩)。" },
+        { t:"火眼金睛", inst:"选出正确字形", phrase:"震__", opts:["撼", "感"], ans:"撼", why:"震撼用手(撼)。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"nì fán", opts:["腻烦", "膩烦"], ans:"腻烦", why:"腻是月字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"zhān yǎng", opts:["瞻仰", "檐仰"], ans:"瞻仰", why:"瞻是目字旁。" },
+        { t:"火眼金睛", inst:"看拼音选汉字", phrase:"miǎo shì", opts:["藐视", "蔑视"], ans:"藐视", why:"藐是草字头。" }
+    ];
+
+    let currentPool = []; let idx = 0; let score = 0; let wrongRecords = [];
+
+    function startGame() {
+        if (AudioCtx.state === 'suspended') AudioCtx.resume();
+        // 随机抽取20题，因为库够大，所以不会重复
+        currentPool = [...DB].sort(() => Math.random() - 0.5).slice(0, 20);
+        idx = 0; score = 0; wrongRecords = [];
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = currentPool[idx];
+        document.getElementById('count-display').innerText = `斩妖进度: ${idx + 1}/20`;
+        document.getElementById('progress-bar').style.width = `${((idx+1) / 20) * 100}%`;
+        document.getElementById('score-display').innerText = `功德点: ${score}`;
+        document.getElementById('q-type').innerText = q.t;
+        
+        document.getElementById('q-main-display').innerHTML = `
+            <div class="q-instruction">${q.inst}：</div>
+            <div class="q-phrase">${q.phrase}</div>
+        `;
+        
+        const grid = document.getElementById('options-grid'); grid.innerHTML = '';
+        let opts = [...q.opts].sort(() => Math.random() - 0.5);
+        opts.forEach(opt => {
+            const btn = document.createElement('button'); btn.className = 'option-btn';
+            btn.innerText = opt; btn.onclick = () => { playSound(600, 'sine', 0.1); check(btn, opt, q); };
+            grid.appendChild(btn);
+        });
+        document.getElementById('feedback-box').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+    }
+
+    function check(btn, val, q) {
+        document.querySelectorAll('.option-btn').forEach(b => b.onclick = null);
+        const isCorrect = val === q.ans;
+        if (isCorrect) {
+            playSound(880, 'triangle', 0.3);
+            btn.classList.add('correct'); score += 5;
+            document.getElementById('fb-title').innerText = "✅ 一击即中！";
+            document.getElementById('fb-title').style.color = "var(--correct)";
+        } else {
+            playSound(150, 'sawtooth', 0.4);
+            btn.classList.add('wrong');
+            // 去除高亮标签，仅显示纯文本供记录
+            const pureText = q.phrase.replace(/<[^>]+>/g, '');
+            wrongRecords.push({ phrase: pureText, ans: q.ans });
+            document.getElementById('fb-title').innerText = "❌ 妖孽凶猛！";
+            document.getElementById('fb-title').style.color = "var(--wrong)";
+            document.querySelectorAll('.option-btn').forEach(b => { if(b.innerText === q.ans) b.classList.add('correct'); });
+        }
+        document.getElementById('fb-text').innerText = q.why;
+        document.getElementById('feedback-box').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    function nextQuestion() {
+        idx++;
+        if (idx < currentPool.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = score;
+        const list = document.getElementById('wrong-list');
+        if (wrongRecords.length === 0) {
+            list.innerHTML = "<p style='color:var(--correct)'>完美通关！你的法力已臻化境！</p>";
+        } else {
+            list.innerHTML = wrongRecords.map(r => `<div class="wrong-item">${r.phrase} 👉 正确：${r.ans}</div>`).join('');
+        }
+    }
+</script>
+</body>
+</html>
